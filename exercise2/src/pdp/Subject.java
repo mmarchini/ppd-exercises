@@ -10,7 +10,7 @@ public class Subject implements Runnable {
     List<Integer> pool;
     List<AbstractObserver> observers;
 
-    public synchronized void subscribe(AbstractObserver observer) throws DuplicateObserverException {
+    public synchronized void subscribe(AbstractObserver observer){
         observers.add(observer);
     }
 
@@ -22,21 +22,24 @@ public class Subject implements Runnable {
         pool.add(newValue);
     }
 
-    private synchronized void notifyAllObservers() {
-        Integer nextValue = pool.remove(0);
+    private synchronized void notifyAllObservers(Integer nextValue) {
         for(AbstractObserver observer : observers) {
             observer.execute(nextValue);
         }
     }
 
+    private synchronized void terminateAllObservers() {
+        for(AbstractObserver observer : observers) {
+            observer.terminate();
+        }
+    }
+
     @Override
     public void run() {
-        pool = new ArrayList<Integer>();
-        while(true){
-            if(pool.size() > 1) {
-                notifyAllObservers();
-            }
+        for(Integer nextValue : pool) {
+            notifyAllObservers(nextValue);
         }
+        terminateAllObservers();
     }
 }
 

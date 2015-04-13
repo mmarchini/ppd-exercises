@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 import pdp.SharedInteger;
 
-public abstract class AbstractObserver {
+public abstract class AbstractObserver implements Runnable {
 
     private SharedInteger sharedInteger;
     private List<Integer> pool;
@@ -22,11 +22,13 @@ public abstract class AbstractObserver {
             return; // Exception?
         synchronized(this){
             pool.add(val);
+            notifyAll();
         }
     }
 
     public synchronized void terminate() {
         willTerminate = true;
+        notifyAll();
     }
 
     private boolean stopExecution() {
@@ -36,13 +38,23 @@ public abstract class AbstractObserver {
     protected abstract Integer operation(Integer a, Integer b);
 
     public void run() {
-        Integer nextVal;
+        Integer nextVal = 0;
+        boolean newValue;
         willTerminate = false;
         while(!stopExecution()) {
-            if(pool.size()>0){
-                synchronized(this) {
+            synchronized(this) {
+                if(pool.size()>0) {
+                    newValue = true;
                     nextVal = pool.remove(0);
+                } else {
+                    newValue = false;
+                    try {
+                        wait();
+                    } catch (InterruptedException ex) {
+                    }
                 }
+            }
+            if(newValue){
                 synchronized(sharedInteger){
                     nextVal = operation(sharedInteger.getVal(), nextVal);
                     sharedInteger.setVal(nextVal);

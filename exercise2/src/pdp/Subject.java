@@ -10,6 +10,11 @@ public class Subject implements Runnable {
     List<Integer> pool;
     List<AbstractObserver> observers;
 
+    public Subject() {
+        observers = new ArrayList<AbstractObserver>();
+        pool = new ArrayList<Integer>();
+    }
+
     public synchronized void subscribe(AbstractObserver observer){
         observers.add(observer);
     }
